@@ -4,9 +4,14 @@ This program annotates sequences for user-submitted genes using data from Ensemb
 
 # Software Requirements
 MacOS 10.13.1+ (OSX High Sierra or above)
+
 Access to Ensembl website (https://www.ensembl.org)
+
 Annotated genome on Ensembl website
+
 ApE program installed on computer (http://jorgensen.biology.utah.edu/wayned/ape/)
+
+Python 3 dependencies: regex, xlrd, fuzzywuzzy
 
 # Contributor
 Matt E. McFaul - Contact at memcfaul@ucdavis.edu
