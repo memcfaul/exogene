@@ -1,4 +1,4 @@
-from gb_gui import genebuilder as gb
+from xo_gui import exogene as xo
 from tkinter import Tk
 from pathlib import Path as plp
 import sys
@@ -11,7 +11,7 @@ with open(output, 'w') as f:
     root.geometry("555x357")
     root.update()
     root.title("ExoGene 1.0.1")
-    main = gb(root)
+    main = xo(root)
     root.protocol("WM_DELETE_WINDOW", main.quit)
     main.start()
     root.update()

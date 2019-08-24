@@ -1,5 +1,5 @@
 from urllib import request
-from gb_ape import ape_object as ap
+from xo_ape import ape
 from collections import defaultdict as dd
 from regex import compile as re_compile,IGNORECASE as re_ig
 from pathlib import Path as plp
@@ -124,19 +124,19 @@ class annotate(object):
               
     def _ape_annotate(self):
         if self.get_gDNA:
-            self.genomic = ap(name="{}_gDNA".format(self.symbol),\
+            self.genomic = ape(name="{}_gDNA".format(self.symbol),\
                 sequence=self.sequences["dna"].pop("sequence"))
             [self.genomic.add_comment(self.sequences["dna"].get(i)) \
                 for i in self.sequences["dna"].keys()]
             self.sequences.pop("dna")
         if self.splice == "all":
-            self.cdna.update(**{k:ap(name="{}_{}_cDNA".format(self.symbol,k),\
+            self.cdna.update(**{k:ape(name="{}_{}_cDNA".format(self.symbol,k),\
                 sequence=v.get("cdna")[0])
             for k,v in self.sequences.items()})
         else:
             k,v =  self.best_transcript,\
                 self.sequences[self.best_transcript]
-            self.cdna.update(**{k:ap(name="{}_{}_cDNA".format(self.symbol,k),\
+            self.cdna.update(**{k:ape(name="{}_{}_cDNA".format(self.symbol,k),\
                 sequence=v.get("cdna")[0])})
                 
         for trans in self.cdna.keys():
@@ -184,7 +184,7 @@ class annotate(object):
                                 if 'utr' not in par:
                                     break
                                 try:    
-                                    seq_ape = ap(seq)
+                                    seq_ape = ape(seq)
                                     for ex in dict_shot['exon']:
                                         if len(seq_ape.sequence) >= len(ex):
                                             seq_search = seq_ape.degenerate_search(ex,int(len(ex)*0.02),search_reverse=False)
@@ -194,7 +194,7 @@ class annotate(object):
                                                 seq_ape.sequence = seq_ape.sequence[max(min(seq_search)):]
                                             
                                         else:
-                                            ex_ape = ap(ex)
+                                            ex_ape = ape(ex)
                                             seq_copy = seq_ape.sequence
                                             search_seq = ex_ape.degenerate_search(seq_copy,int(len(seq_copy)*0.02),search_reverse=False)
                                             g_search = self.genomic.degenerate_search(ex,int(len(ex)*0.02),search_reverse=False)
@@ -224,7 +224,7 @@ class annotate(object):
             return "txt"
             
     def get_primer_seqs(self,path,primer_name_index=0,primer_sequence_index=1,sheet_index=0):
-        ape = ap()
+        ape = ape()
         file_type = self.determine_file_type(path)
         if file_type=="excel":
             primers = ape.get_primers_excel(path,sheet_index,primer_name_index,primer_sequence_index)
@@ -250,7 +250,7 @@ class annotate(object):
     
     def import_crisprs(self,path='crisprs.xlsx',feature_type='Cas9_sgRNA',fwd_color='#8000FF',rev_color ='#FF00FF',pam_color='#FFFF00',sheet_index=2,primer_name_index=0,primer_sequence_index=1,sequence_splits='default',pam='NGG'):
         primers = self.get_primer_seqs(path,primer_name_index,primer_sequence_index)
-        ape = ap()
+        ape = ape()
         for item in primers.items():
             primer_name = item[0] 
             primer = item[1]
@@ -280,7 +280,7 @@ class annotate(object):
                         out.write("{}".format(seq[i:i+100]))
                     out.write("\n\n")
             if self.do_open:
-                ape = ap()
+                ape = ape()
                 ape.open_ape(pf,"open")
                 
                                                                                    

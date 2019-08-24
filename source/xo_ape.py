@@ -7,7 +7,7 @@ from collections import OrderedDict as od
 from fuzzywuzzy import process as fwpro
 from regex import compile as r_compile, IGNORECASE as ig, sub as r_sub,findall
 
-class ape_object(object):
+class ape(object):
     def __init__(self,sequence='',name='DNA',validate_sequence=False):
         self.parial_dict = {
             't7':(r_compile('\w*?'+self.deg_replace('TAATACGACTCACTATAGN'),flags=ig),'NN'),
@@ -65,7 +65,7 @@ class ape_object(object):
     def validate_sequence(self,seq):
         return all((i.upper() in self.valid_characters for i in seq))
     def __repr__(self):
-        return '"ape_object({})"'.format(self.name)                  
+        return '"ape({})"'.format(self.name)                  
     def __str__(self):
         return "{}: {}bp".format(self.name,self.length)       
     def __len__(self):
@@ -477,7 +477,7 @@ def parse_ape(ape_file):
 
 
 def load_ape(**kwargs):
-    ap = ape_object()
+    ap = ape()
     [setattr(ap,*i) for i in kwargs.items()]
     return ap
               
@@ -487,7 +487,7 @@ def load_fasta(fa_file):
     with open(fa_file,'rU') as sfile:
         seq = fa.findall(sfile.read())
     for i in seq:
-        ap.append(ape_object(*i[::-1]))
+        ap.append(ape(*i[::-1]))
     return ap
                 
 def load_file(ape_file, name=''):
@@ -518,7 +518,7 @@ def load_file(ape_file, name=''):
                     params.update({"name":name,"_save_path":save_path,"length":len(params["sequence"])})
                     ap =  load_ape(**params)                                    
                     if not ap.sequence:
-                        ap = ape_object(ape_file,name,validate_sequence=True)
+                        ap = ape(ape_file,name,validate_sequence=True)
                         if not ap.sequence:
                             print(err_message)
                             return None
@@ -538,7 +538,7 @@ def test_color_file(colors,names=[]):
     if names:
         if len(colors)!=len(names):
             raise IndexError('names and colors lists must be same length')
-    c = ape_object('','')
+    c = ape('','')
     seq = []
     for color in colors:
         segment = []
@@ -562,8 +562,8 @@ def test_color_file(colors,names=[]):
     return seq                                                    
                                                 
 if __name__ =='__main__': 
-    colors = list(ape_object().color_dict.values())
-    hex_dict = dict([(i[1],i[0]) for i in ape_object().color_dict.items()])
+    colors = list(ape().color_dict.values())
+    hex_dict = dict([(i[1],i[0]) for i in ape().color_dict.items()])
     names = ["{}({})".format(hex_dict[i],i) for i in colors]
     sequence = test_color_file(colors,names)
    

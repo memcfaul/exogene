@@ -2,7 +2,7 @@ from tkinter import Frame,Button,Label,Text,Checkbutton,Entry,\
                     Radiobutton,StringVar,IntVar,Tk
 from tkinter.ttk import Combobox
 from tkinter import filedialog as tfd
-from gb_gene import annotate as gene
+from xo_annotate import annotate as gene
 import regex as re
 from pathlib import Path as plp
 from time import sleep
