@@ -1,5 +1,5 @@
 # exogene
-Annotates gene sequences with codon information custom user sequences.
+Annotates gene sequences with codon information and custom user sequences.
 
 This program annotates sequences for user-submitted genes using data from Ensembl and outputs the annotation in a GenBank format file that can be opened by the ApE program (A plasmid Editor). 
 
