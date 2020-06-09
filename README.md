@@ -5,6 +5,8 @@ This program annotates sequences for user-submitted genes using data from Ensemb
 
 # Software Requirements
 MacOS 10.13.1+ (OSX High Sierra or above)
+        OR
+Microsoft Windows 7 or above
 
 Access to Ensembl website (https://www.ensembl.org)
 
@@ -18,7 +20,7 @@ Python 3 dependencies: regex, xlrd, fuzzywuzzy
 Matt E. McFaul - Contact at memcfaul@ucdavis.edu
 
 # License
-Copyright 2017-2019 Matt E. McFaul
+Copyright 2017-2020 Matt E. McFaul
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
