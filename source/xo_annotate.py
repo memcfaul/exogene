@@ -3,20 +3,26 @@ from xo_ape import ape
 from collections import defaultdict as dd
 from regex import compile as re_compile,IGNORECASE as re_ig
 from pathlib import Path as plp
+from certifi import where
+from ssl import create_default_context
 
 #path to primer list excel book
 
 class annotate(object):
     def __init__(self,symbol,species="danio_rerio",splice="cds", peptide=False,\
-            cDNA=True,gDNA=True,flank=500,do_open=True,save_path='',auto_start=True):
+            cDNA=True,gDNA=True,flank=500,do_open=True,save_path='',auto_start=True,ape_program=None):
         """splice: "cds", "cdna", or "all" 
         """
-        
+
         self.save_path = save_path
         self.splice = splice.lower()
         self.do_open = do_open
+        if ape_program:
+            ape_program = plp(ape_program)
+        self.program_path = ape_program
         #gene name/symbol
         self.species = species
+        self.errors = []
         self.symbol = symbol 
         #mRNA transcript IDs and info
         self.transcripts = []
@@ -35,7 +41,9 @@ class annotate(object):
             self._initialize()
     
     def _initialize(self):
-        a = self._fasta_clean(self.fetch_gene(self.symbol,flank=self.flank,get_cDNA=True))
+        self.errors = []
+        url = self.get_url(self.symbol,flank=self.flank,get_cDNA=True)
+        a = self._fasta_clean(self.fetch_gene(url))
         if not a:
             raise IndexError("Gene '{}' could not be found for organism '{}'".format(self.symbol,self.species))
         b = self._parse_fasta(a)
@@ -47,8 +55,8 @@ class annotate(object):
             path = self.save_path
         self.import_primers()
         self.write_ape(path=path,do_open=do_open)
-        
-    def fetch_gene(self,symbol=None,flank = 500,output = False,get_peptide = None,get_gDNA=None,get_cDNA = None):
+
+    def get_url(self,symbol=None,flank = 500,get_peptide = None,get_gDNA=None,get_cDNA = None):
         gdna = ''
         cdna = ''
         peptide = ''
@@ -60,8 +68,11 @@ class annotate(object):
             gdna = 'genomic=unmasked;'
         if get_peptide or (get_peptide is None and self.get_peptide):
             peptide = 'param=peptide;'.format(self.best_transcript)
-        url = '''http://uswest.ensembl.org/{0}/Export/Output/Gene?db=core;flank3_display={1};flank5_display={1};g={2};output=fasta;strand=feature;{3}{4}{5}_format=Text'''.format(self.species,flank,symbol,cdna,gdna,peptide)
-        fasta = request.urlopen(url).read()
+        url = '''http://www.ensembl.org/{0}/Export/Output/Gene?db=core;flank3_display={1};flank5_display={1};g={2};output=fasta;strand=feature;{3}{4}{5}_format=Text'''.format(self.species,flank,symbol,cdna,gdna,peptide)
+        return url
+
+    def fetch_gene(self,url,output = False):
+        fasta = request.urlopen(url,context=create_default_context(cafile=where())).read()
         fasta = fasta.decode('utf-8')
         if output:   
             with open('{}.txt'.format(self.symbol),'w') as out:
@@ -77,10 +88,9 @@ class annotate(object):
                 seq = ''.join(splits[1:])
                 cleaned.append('{}\n{}'.format(head,seq.strip()))
         return "".join(cleaned)
-                           
-        
+
     def _parse_fasta(self,fasta):
-        pat = re_compile(r'>(?P<hGene>[\w\d\.]+ ){0,1}(?P<hSplice>[\w\.]+)[ :]{1,2}(?P<id>[\w\.]+) (?P<type>[\w\.]+)[ :]{1,2}(?P<info>[\w\.]+)[ :]{0,1}(?P<chrom>\w+:\w+:*\d*:*[- 0-9]*){0,1}.*?\n(?P<seq>[^>]+)',flags=re_ig)
+        pat = re_compile(r'>(?P<hGene>[\w\d\.-]+ ){0,1}(?P<hSplice>[\w\.-]+)[ :]{1,2}(?P<id>[\w\.-]+) (?P<type>[\w\.-]+)[ :]{1,2}(?P<info>[-\w\.]+)[ :]{0,1}(?P<chrom>\w+:\w+:*\w*:*[- 0-9]*){0,1}.*?\n(?P<seq>[^>]+)',flags=re_ig)
         fasta_parse = pat.finditer(fasta)
         return fasta_parse
     
@@ -89,7 +99,7 @@ class annotate(object):
         for i in fasta_parse:
             splice = i.group('id')
             kind = i.group('type').replace(' ','') 
-            if kind == params[6]:
+            if kind == "peptide":
                 self.peptide[i.group('info')] = i.group('seq')      
             elif splice in ('chromosome','primary_assembly','dna'):
                 if kind in ('chromosome','primary_assembly'):
@@ -100,7 +110,7 @@ class annotate(object):
                     self.sequences["dna"]["coordinates"] = 'Coordinates = {},{}; Orientation = {}'.format(info[1],info[2],info[3])
             else:          
                 if 'exon' in i.group('info'):
-                    kind = 'exon'     
+                    kind = 'exon'
                 self.sequences[splice][kind].append(i.group('seq'))
     
         if self.splice == "cdna":
@@ -224,12 +234,12 @@ class annotate(object):
             return "txt"
             
     def get_primer_seqs(self,path,primer_name_index=0,primer_sequence_index=1,sheet_index=0):
-        ape = ape()
+        ap = ape()
         file_type = self.determine_file_type(path)
         if file_type=="excel":
-            primers = ape.get_primers_excel(path,sheet_index,primer_name_index,primer_sequence_index)
+            primers = ap.get_primers_excel(path,sheet_index,primer_name_index,primer_sequence_index)
         else:
-            primers = ape.get_primers_txt(path,primer_name_index,primer_sequence_index)  
+            primers = ap.get_primers_txt(path,primer_name_index,primer_sequence_index)  
         return primers   
         
 
@@ -250,11 +260,11 @@ class annotate(object):
     
     def import_crisprs(self,path='crisprs.xlsx',feature_type='Cas9_sgRNA',fwd_color='#8000FF',rev_color ='#FF00FF',pam_color='#FFFF00',sheet_index=2,primer_name_index=0,primer_sequence_index=1,sequence_splits='default',pam='NGG'):
         primers = self.get_primer_seqs(path,primer_name_index,primer_sequence_index)
-        ape = ape()
+        ap = ape()
         for item in primers.items():
             primer_name = item[0] 
             primer = item[1]
-            primer_strip = ape.strip_features(sequence=primer,sequence_splits=sequence_splits)
+            primer_strip = ap.strip_features(sequence=primer,sequence_splits=sequence_splits)
             primer = primer_strip
             if primer and primer_name:
                 if self.get_cDNA:
@@ -267,9 +277,15 @@ class annotate(object):
         path=self.save_path            
         if self.get_cDNA:
             for i in self.cdna.keys():
-                self.cdna[i].create_ape_file("{}_{}_cDNA_{}".format(self.symbol,i,self.species),path,do_open=self.do_open)
+                try:
+                    self.cdna[i].create_ape_file("{}_{}_cDNA_{}".format(self.symbol,i,self.species),path,do_open=self.do_open,program_path=self.program_path)
+                except OSError as e:
+                    self.errors.append(e)
         if self.get_gDNA:
-            self.genomic.create_ape_file('{}_gDNA_{}'.format(self.symbol,self.species),path,do_open=self.do_open)
+            try:
+                self.genomic.create_ape_file('{}_gDNA_{}'.format(self.symbol,self.species),path,do_open=self.do_open,program_path=self.program_path)
+            except OSError as e:
+                self.errors.append(e)
         if self.get_peptide:
             file_name = "{}_protein_{}.txt".format(self.symbol,self.species)
             pf = '{}/{}'.format(path,file_name).replace('//','/')
@@ -280,11 +296,15 @@ class annotate(object):
                         out.write("{}".format(seq[i:i+100]))
                     out.write("\n\n")
             if self.do_open:
-                ape = ape()
-                ape.open_ape(pf,"open")
+                ap = ape()
+                try:
+                    ap.open_ape(pf,"open")
+                except OSError as e:
+                    self.errors.append(e)
+        if self.errors:
+            raise OSError(self.errors[0])
                 
                                                                                    
 if __name__ == '__main__':
-    gene = annotate("etv5a",species = "danio_rerio",save_path=plp.home() /"Desktop" )
+    gene = annotate("rpl8a",species = "saccharomyces_cerevisiae",save_path=plp.home() /"Desktop",auto_start=True)
     gene.write_ape()
-        

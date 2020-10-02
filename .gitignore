@@ -1,0 +1,10 @@
+*.DS_Store
+__pycache__
+*.pyo
+.git
+~$*.*
+~*
+*.Rproj*
+*.RData
+*.Rhistory
+*.Rapp.history

@@ -2,11 +2,11 @@ from os import remove,path as os_path
 from pathlib import Path as plp
 import random
 import xlrd
-from subprocess import Popen
+from subprocess import run
 from collections import OrderedDict as od
 from fuzzywuzzy import process as fwpro
 from regex import compile as r_compile, IGNORECASE as ig, sub as r_sub,findall
-
+from sys import platform
 class ape(object):
     def __init__(self,sequence='',name='DNA',validate_sequence=False):
         self.parial_dict = {
@@ -376,18 +376,24 @@ class ape(object):
         if program_path is not None:
             program_path=plp(program_path).resolve()
             try:
-                Popen([program_path,file_path],shell = False)
-                return None
+                if platform == "darwin":
+                    run(["open","-a",program_path,file_path])
+                elif platform == "win32":
+                    run([str(program_path),str(file_path)])
+                return
             except Exception as e:
                 print(e)
                 print("Could not open file {} with {}\nOpening with system default".format(file_path,str(program_path)))
         try:
-            Popen(["open",file_path],shell=False) 
+            if platform == "darwin":
+                run(["open",file_path])
+            elif platform == "win32":
+                run(["start","/wait",str(file_path)])
         except Exception as e:
             print(e)
             raise OSError("Could not open file {}, ensure ApE is installed".format(file_path))
                    
-    def create_ape_file(self,ape_name='',path=None,do_open=False):
+    def create_ape_file(self,ape_name='',path=None,do_open=False,program_path=None):
         if path is None:
             path = self._save_path
         path = plp(path)
@@ -406,7 +412,7 @@ class ape(object):
             out.write('ORIGIN\n{}\n//'.format(self.sequence))
         if do_open:
             file_path = os_path.join(path,self.file_name)
-            self.open_ape(file_path)
+            self.open_ape(file_path,program_path)
 
 def _parse_features(feat_list):
     features = od()
